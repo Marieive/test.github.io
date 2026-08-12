@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Defining / Non-defining — тренажёр</title>
+<style>
+  :root {
+    --purple: #5B2C8F;
+    --teal: #0F6E56;
+    --teal-bg: #E1F5EE;
+    --coral: #993C1D;
+    --coral-bg: #FAECE7;
+    --red: #A32D2D;
+    --red-bg: #FCEBEB;
+    --green: #3B6D11;
+    --green-bg: #EAF3DE;
+    --grey: #5F5E5A;
+    --line: #E3E1D9;
+    --ink: #26221C;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 100px;
+    color: var(--ink);
+    line-height: 1.6;
+    background: #fdfcfa;
+  }
+  h1 { color: var(--purple); font-size: 24px; margin-bottom: 4px; }
+  .subtitle { color: var(--grey); font-size: 14px; margin-top: 0; margin-bottom: 24px; }
+  .progress-wrap {
+    position: sticky; top: 0; background: #fdfcfa; padding: 10px 0 14px; z-index: 10;
+    border-bottom: 1px solid var(--line); margin-bottom: 24px;
+  }
+  .progress-bar { height: 8px; background: #EEEBE2; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--purple); width: 0%; transition: width .3s; }
+  .progress-text { font-size: 13px; color: var(--grey); margin-top: 6px; display: flex; justify-content: space-between; }
+  .score { font-weight: 600; color: var(--teal); }
+
+  .mode-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .mode-tab {
+    padding: 7px 14px; border-radius: 20px; border: 1px solid var(--line);
+    background: white; font-size: 13.5px; cursor: pointer; color: var(--grey);
+  }
+  .mode-tab.active { background: var(--purple); color: white; border-color: var(--purple); }
+
+  .qcard {
+    background: white; border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 16px; display: none;
+  }
+  .qcard.visible { display: block; }
+  .qtag {
+    display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--purple);
+    background: #F0EBFA; padding: 2px 9px; border-radius: 10px; margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .qtext { font-size: 17px; margin: 0 0 16px; }
+  .qtext .blank-target { border-bottom: 2px solid var(--purple); padding: 0 4px; }
+
+  .opts { display: flex; flex-direction: column; gap: 8px; }
+  .opt {
+    text-align: left; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px;
+    background: white; font-size: 15px; cursor: pointer; color: var(--ink);
+  }
+  .opt:hover { background: #F7F6F1; }
+  .opt.correct { background: var(--green-bg); border-color: var(--green); color: var(--green); font-weight: 500; }
+  .opt.wrong { background: var(--red-bg); border-color: var(--red); color: var(--red); font-weight: 500; }
+  .opt:disabled { cursor: default; }
+
+  .opts-row { display: flex; gap: 10px; }
+  .opts-row .opt { flex: 1; text-align: center; }
+
+  .fillrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .fillrow input[type=text] {
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 15px;
+    width: 220px;
+  }
+  .fillrow button {
+    padding: 8px 16px; border-radius: 6px; border: 1px solid var(--purple);
+    background: var(--purple); color: white; font-size: 14px; cursor: pointer;
+  }
+  .fillrow button:disabled { opacity: 0.5; cursor: default; }
+
+  .feedback {
+    margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 14.5px; display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok { background: var(--green-bg); color: var(--green); }
+  .feedback.bad { background: var(--red-bg); color: var(--red); }
+  .feedback .why { color: var(--ink); margin-top: 6px; font-size: 14px; opacity: 0.85; }
+
+  .navrow { display: flex; justify-content: space-between; margin-top: 20px; }
+  .navbtn {
+    padding: 9px 18px; border-radius: 8px; border: 1px solid var(--line);
+    background: white; font-size: 14px; cursor: pointer; color: var(--ink);
+  }
+  .navbtn:disabled { opacity: 0.35; cursor: default; }
+  .navbtn.primary { background: var(--teal); border-color: var(--teal); color: white; }
+
+  .done {
+    text-align: center; padding: 32px 20px; display: none;
+  }
+  .done.visible { display: block; }
+  .done h2 { color: var(--purple); }
+  .done .bigscore { font-size: 42px; font-weight: 600; color: var(--teal); margin: 10px 0; }
+  .restart-btn {
+    margin-top: 16px; padding: 10px 22px; border-radius: 8px; border: none;
+    background: var(--purple); color: white; font-size: 14.5px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>Defining / Non-defining — тренажёр</h1>
+<p class="subtitle">Интерактивная отработка. Ответил — сразу видно результат и почему.</p>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-text">
+    <span id="progressLabel">Вопрос 1 из 20</span>
+    <span class="score" id="scoreLabel">0 верно</span>
+  </div>
+</div>
+
+<div class="mode-tabs" id="modeTabs">
+  <button class="mode-tab active" data-mode="all">Все</button>
+  <button class="mode-tab" data-mode="classify">D / ND</button>
+  <button class="mode-tab" data-mode="pronoun">Местоимение</button>
+  <button class="mode-tab" data-mode="omit">Можно убрать?</button>
+  <button class="mode-tab" data-mode="meaning">Смысл</button>
+</div>
+
+<div id="quizArea"></div>
+
+<div class="done" id="doneScreen">
+  <h2>Готово</h2>
+  <div class="bigscore" id="finalScore">0 / 0</div>
+  <p id="finalMsg"></p>
+  <button class="restart-btn" onclick="restart()">Пройти ещё раз</button>
+</div>
+
+<script>
+const QUESTIONS = [
+  // ---- classify: defining or non-defining ----
+  { mode: "classify", type: "choice2",
+    text: "The waiter who served us was incredibly rude.",
+    q: "Клауза 'who served us' — это:",
+    opts: ["Defining", "Non-defining"], correct: 0,
+    why: "Без клаузы 'The waiter was rude' — непонятно, какой из официантов. Клауза сужает референт." },
+  { mode: "classify", type: "choice2",
+    text: "My grandfather, who fought in the war, never talked about it.",
+    q: "Клауза 'who fought in the war' — это:",
+    opts: ["Defining", "Non-defining"], correct: 1,
+    why: "'My grandfather' уже однозначно определяет референта. Клауза добавляет отдельный факт." },
+  { mode: "classify", type: "choice2",
+    text: "Mount Everest, which is over 8,000 metres high, attracts climbers from around the world.",
+    q: "Клауза 'which is over 8,000 metres high' — это:",
+    opts: ["Defining", "Non-defining"], correct: 1,
+    why: "Mount Everest — уникальный объект, референт и так ясен. Клауза просто добавляет факт." },
+  { mode: "classify", type: "choice2",
+    text: "The phone that I dropped yesterday still works fine.",
+    q: "Клауза 'that I dropped yesterday' — это:",
+    opts: ["Defining", "Non-defining"], correct: 0,
+    why: "Без клаузы 'The phone still works fine' — непонятно, о каком телефоне речь. Клауза сужает." },
+  { mode: "classify", type: "choice2",
+    text: "Passengers who don't have a valid ticket will be asked to leave the train.",
+    q: "Клауза 'who don't have a valid ticket' — это:",
+    opts: ["Defining", "Non-defining"], correct: 0,
+    why: "Речь не обо всех пассажирах, а только о тех, у кого нет билета — клауза выделяет подмножество." },
+  { mode: "classify", type: "choice2",
+    text: "My landlord, whose flat I've been renting for years, is finally selling the building.",
+    q: "Клауза 'whose flat I've been renting for years' — это:",
+    opts: ["Defining", "Non-defining"], correct: 1,
+    why: "'My landlord' уже определён (он один). Клауза добавляет дополнительную информацию." },
+  { mode: "classify", type: "choice2",
+    text: "This is the bench where he proposed to her.",
+    q: "Клауза 'where he proposed to her' — это:",
+    opts: ["Defining", "Non-defining"], correct: 0,
+    why: "Без клаузы 'This is the bench' — непонятно, какая именно скамейка имеется в виду." },
+  { mode: "classify", type: "choice2",
+    text: "The restaurant whose chef recently won an award is fully booked for months.",
+    q: "Клауза 'whose chef recently won an award' — это:",
+    opts: ["Defining", "Non-defining"], correct: 0,
+    why: "'The restaurant' без клаузы непонятно, о каком именно ресторане речь — клауза его идентифицирует." },
+
+  // ---- pronoun choice ----
+  { mode: "pronoun", type: "choice",
+    text: "The keys ___ you left on the table are mine.",
+    q: "Выберите местоимение:",
+    opts: ["who", "that / which", "whose"], correct: 1,
+    why: "Речь о ключах (не о человеке) в defining clause — подходят that или which." },
+  { mode: "pronoun", type: "choice",
+    text: "My cousin, ___ moved to Australia last year, is coming home for Christmas.",
+    q: "Выберите местоимение:",
+    opts: ["that", "who", "which"], correct: 1,
+    why: "Non-defining clause про человека — that здесь невозможен, только who." },
+  { mode: "pronoun", type: "choice",
+    text: "The company ___ profits doubled this year is planning to expand.",
+    q: "Выберите местоимение:",
+    opts: ["who", "whose", "which"], correct: 1,
+    why: "Речь о принадлежности (its profits) — нужен притяжательный whose." },
+  { mode: "pronoun", type: "choice",
+    text: "This necklace, ___ my grandmother gave me, is the only jewellery I never take off.",
+    q: "Выберите местоимение:",
+    opts: ["that", "which", "who"], correct: 1,
+    why: "Non-defining clause про вещь — that запрещён в non-defining, нужен which." },
+  { mode: "pronoun", type: "choice",
+    text: "Sam's new bike, ___ cost him a fortune, was stolen within a week.",
+    q: "Выберите местоимение:",
+    opts: ["that", "which", "whose"], correct: 1,
+    why: "Non-defining про вещь — единственный допустимый вариант: which." },
+
+  // ---- can you omit the pronoun? ----
+  { mode: "omit", type: "choice2",
+    text: "The restaurant recommended the wine that we ordered.",
+    q: "Можно ли убрать 'that'?",
+    opts: ["Да", "Нет"], correct: 0,
+    why: "У клаузы уже есть подлежащее 'we' — that здесь дополнение (object), его можно опустить: 'the wine we ordered'." },
+  { mode: "omit", type: "choice2",
+    text: "He wore a jacket that smelled of smoke.",
+    q: "Можно ли убрать 'that'?",
+    opts: ["Да", "Нет"], correct: 1,
+    why: "После that сразу глагол (smelled) — своего подлежащего у клаузы нет, значит that само является подлежащим. Подлежащее убрать нельзя." },
+  { mode: "omit", type: "choice2",
+    text: "My colleague, who studied in France, speaks fluent French.",
+    q: "Можно ли убрать 'who'?",
+    opts: ["Да", "Нет"], correct: 1,
+    why: "Это non-defining clause — местоимение никогда не опускается, независимо от роли в клаузе." },
+  { mode: "omit", type: "choice2",
+    text: "The hotel whose pool was under renovation gave us a discount.",
+    q: "Можно ли убрать 'whose'?",
+    opts: ["Да", "Нет"], correct: 1,
+    why: "Whose (притяжательное) никогда не опускается — оно связывает существительное внутри клаузы с антецедентом." },
+  { mode: "omit", type: "choice2",
+    text: "The song that she was humming stuck in my head all day.",
+    q: "Можно ли убрать 'that'?",
+    opts: ["Да", "Нет"], correct: 0,
+    why: "У клаузы уже есть подлежащее 'she' — that здесь object, можно убрать: 'the song she was humming'." },
+
+  // ---- meaning shift (minimal pairs) ----
+  { mode: "meaning", type: "choice",
+    text: "'The workers who complained about the pay got fired.' (без запятых)",
+    q: "Что это значит?",
+    opts: [
+      "Все работники жаловались на зарплату, и всех уволили",
+      "Уволили только тех, кто жаловался — не всех работников"
+    ], correct: 1,
+    why: "Без запятых клауза defining — она выбирает конкретную группу работников, которая жаловалась." },
+  { mode: "meaning", type: "choice",
+    text: "'The workers, who complained about the pay, got fired.' (с запятыми)",
+    q: "Что это значит?",
+    opts: [
+      "Все работники (это одна группа) жаловались, и всех уволили",
+      "Уволили только часть работников, остальные ни при чём"
+    ], correct: 0,
+    why: "С запятыми клауза non-defining — она относится ко всей уже определённой группе работников." },
+  { mode: "meaning", type: "choice",
+    text: "'The guests who arrived late missed the speech.' (без запятых)",
+    q: "Что это значит?",
+    opts: [
+      "Все гости опоздали и все пропустили речь",
+      "Речь пропустили только те гости, которые опоздали — не все"
+    ], correct: 1,
+    why: "Defining clause сужает: только опоздавшая часть гостей пропустила речь." },
+];
+
+let currentMode = "all";
+let pool = [];
+let idx = 0;
+let correctCount = 0;
+let answered = false;
+
+function filteredQuestions() {
+  return currentMode === "all" ? QUESTIONS : QUESTIONS.filter(q => q.mode === currentMode);
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function restart() {
+  pool = shuffle(filteredQuestions());
+  idx = 0;
+  correctCount = 0;
+  answered = false;
+  document.getElementById("doneScreen").classList.remove("visible");
+  document.getElementById("quizArea").style.display = "block";
+  renderQuestion();
+}
+
+function updateProgress() {
+  const total = pool.length;
+  const pct = total ? Math.round((idx / total) * 100) : 0;
+  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("progressLabel").textContent = "Вопрос " + Math.min(idx + 1, total) + " из " + total;
+  document.getElementById("scoreLabel").textContent = correctCount + " верно";
+}
+
+function renderQuestion() {
+  updateProgress();
+  const area = document.getElementById("quizArea");
+  if (idx >= pool.length) {
+    area.innerHTML = "";
+    document.getElementById("quizArea").style.display = "none";
+    const total = pool.length;
+    document.getElementById("finalScore").textContent = correctCount + " / " + total;
+    let msg = "Отличный результат!";
+    if (total > 0) {
+      const ratio = correctCount / total;
+      if (ratio < 0.6) msg = "Стоит повторить теорию про defining/non-defining и вернуться.";
+      else if (ratio < 0.85) msg = "Неплохо — пара моментов ещё путается, посмотрите разборы выше.";
+    }
+    document.getElementById("finalMsg").textContent = msg;
+    document.getElementById("doneScreen").classList.add("visible");
+    return;
+  }
+  const item = pool[idx];
+  answered = false;
+  const modeLabels = { classify: "Defining или non-defining", pronoun: "Выбор местоимения", omit: "Можно ли опустить", meaning: "Разница в смысле" };
+  let html = '<div class="qcard visible">';
+  html += '<span class="qtag">' + modeLabels[item.mode] + '</span>';
+  html += '<p class="qtext">' + item.text + '</p>';
+  html += '<p style="font-size:14.5px;color:var(--grey);margin:0 0 12px;">' + item.q + '</p>';
+  if (item.type === "choice2") {
+    html += '<div class="opts opts-row">';
+    item.opts.forEach((o, i) => {
+      html += '<button class="opt" data-i="' + i + '" onclick="answerChoice(' + i + ')">' + o + '</button>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="opts">';
+    item.opts.forEach((o, i) => {
+      html += '<button class="opt" data-i="' + i + '" onclick="answerChoice(' + i + ')">' + o + '</button>';
+    });
+    html += '</div>';
+  }
+  html += '<div class="feedback" id="feedback"></div>';
+  html += '<div class="navrow">';
+  html += '<button class="navbtn" disabled>Назад</button>';
+  html += '<button class="navbtn primary" id="nextBtn" onclick="nextQuestion()" disabled>Дальше</button>';
+  html += '</div>';
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+function answerChoice(i) {
+  if (answered) return;
+  answered = true;
+  const item = pool[idx];
+  const buttons = document.querySelectorAll(".opt");
+  buttons.forEach((b, bi) => {
+    b.disabled = true;
+    if (bi === item.correct) b.classList.add("correct");
+    else if (bi === i && i !== item.correct) b.classList.add("wrong");
+  });
+  const fb = document.getElementById("feedback");
+  const isCorrect = i === item.correct;
+  if (isCorrect) correctCount++;
+  fb.className = "feedback show " + (isCorrect ? "ok" : "bad");
+  fb.innerHTML = (isCorrect ? "Верно." : "Не совсем.") + '<div class="why">' + item.why + '</div>';
+  document.getElementById("nextBtn").disabled = false;
+  updateProgress();
+}
+
+function nextQuestion() {
+  idx++;
+  renderQuestion();
+}
+
+document.getElementById("modeTabs").addEventListener("click", (e) => {
+  const btn = e.target.closest(".mode-tab");
+  if (!btn) return;
+  document.querySelectorAll(".mode-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  currentMode = btn.dataset.mode;
+  restart();
+});
+
+restart();
+</script>
+
+</body>
+</html>
